@@ -19,3 +19,4 @@ CREATE TABLE fraud_alerts (
     variance_pct DECIMAL(6,2) NOT NULL,
     flagged_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
