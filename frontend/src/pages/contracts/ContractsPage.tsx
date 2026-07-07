@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import ContractForm from '../../components/contracts/ContractForm';
 import { dashboardApi } from '../../lib/api';
 
 export default function ContractsPage() {
   const [query, setQuery] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['contracts-page'],
     queryFn: () => dashboardApi.contracts(1, 12).then((res) => res.data),
@@ -32,17 +34,30 @@ export default function ContractsPage() {
             <p className="mt-2 text-sm text-slate-500">Review submitted contracts and their benchmark comparison across the auditor workflow.</p>
           </div>
 
-          <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-            <Search className="h-4 w-4" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search contracts"
-              className="w-48 bg-transparent outline-none"
-            />
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              Create contract
+            </button>
+
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <Search className="h-4 w-4" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search contracts"
+                className="w-48 bg-transparent outline-none"
+              />
+            </label>
+          </div>
         </div>
       </div>
+
+      {showCreateModal ? <ContractForm onClose={() => setShowCreateModal(false)} /> : null}
 
       <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-sm">
         <div className="overflow-x-auto">
