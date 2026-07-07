@@ -12,6 +12,11 @@ interface DashboardPageProps {
 
 const COLORS = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444'];
 
+const toNumber = (value: unknown) => {
+  const parsed = typeof value === 'number' ? value : Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 export default function DashboardPage({ user }: DashboardPageProps) {
   const { data: contractsData, isLoading: contractsLoading } = useQuery({
     queryKey: ['contracts-dashboard'],
@@ -29,10 +34,10 @@ export default function DashboardPage({ user }: DashboardPageProps) {
   const stats = useMemo(() => {
     const contracts = contractsData?.contracts ?? [];
     const alerts = alertsData?.alerts ?? [];
-    const totalValue = contracts.reduce((sum, contract) => sum + contract.awarded_unit_price * contract.quantity, 0);
+    const totalValue = contracts.reduce((sum, contract) => sum + toNumber(contract.awarded_unit_price) * toNumber(contract.quantity), 0);
     const highRisk = alerts.filter((alert) => alert.risk_level === 'High' || alert.risk_level === 'Critical').length;
     const avgVariance = alerts.length
-      ? alerts.reduce((sum, alert) => sum + alert.variance_pct, 0) / alerts.length
+      ? alerts.reduce((sum, alert) => sum + toNumber(alert.variance_pct), 0) / alerts.length
       : 0;
 
     return [
@@ -183,7 +188,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
               <div key={alert.alert_id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <div>
                   <p className="font-medium text-slate-900">{alert.supplier_name}</p>
-                  <p className="text-sm text-slate-500">{alert.item_name} · {alert.variance_pct.toFixed(1)}% variance</p>
+                  <p className="text-sm text-slate-500">{alert.item_name} · {toNumber(alert.variance_pct).toFixed(1)}% variance</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-slate-900">{alert.risk_level}</p>
