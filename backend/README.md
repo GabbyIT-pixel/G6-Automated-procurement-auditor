@@ -21,7 +21,7 @@ suspicious contracts for human review.
 2. Ensure PostgreSQL is running and the `procurement_auditor` database exists with
    the migrations in `../database/migrations/` applied (users, market_baselines,
    procurement_contracts, fraud_alerts).
-3. Populate the project **root** `.env` (copy keys from `backend/.env.example`):
+3. Populate `backend/.env` (copy keys from `backend/.env.example`):
    ```
    DB_HOST=localhost
    DB_PORT=5432
