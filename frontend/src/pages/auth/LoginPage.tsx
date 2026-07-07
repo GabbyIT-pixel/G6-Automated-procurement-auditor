@@ -132,9 +132,9 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
               </button>
             </form>
 
-            <p className="mt-6 text-sm text-slate-500">
-              Demo access uses the same credentials that the backend expects from your existing auth endpoints.
-            </p>
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+              Demo credentials: <span className="font-semibold text-slate-900">jane@moh.go.ke</span> / <span className="font-semibold text-slate-900">supersecret1</span>
+            </div>
           </div>
         </div>
       </motion.div>
