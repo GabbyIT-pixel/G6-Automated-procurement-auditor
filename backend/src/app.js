@@ -1,8 +1,8 @@
-// Load environment from the project ROOT .env using an absolute path so it
+// Load environment from the backend root .env using an absolute path so it
 // works regardless of the current working directory. dotenv does not override
 // variables that are already set, so this is safe alongside config/database.js.
 const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
+require("dotenv").config({ path: path.resolve(__dirname, "../.env"), override: true });
 
 const express = require("express");
 const cors = require("cors");
@@ -34,6 +34,11 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many auth attempts, please try again later" },
+});
+
+// ── Root / status endpoint ─────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.json({ status: "ok", service: "procurement-auditor-api", message: "Welcome to the Procurement Auditor backend" });
 });
 
 // ── Health check ────────────────────────────────────────────────────────
