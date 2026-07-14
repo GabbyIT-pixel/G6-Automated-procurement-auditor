@@ -7,12 +7,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { authApi } from '../../lib/api';
 import type { User } from '../../types';
 
-const schema = z.object({
+const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password should be at least 8 characters'),
 });
 
-type FormValues = z.infer<typeof schema>;
+const signupSchema = z.object({
+  full_name: z.string().min(2, 'Please enter your full name'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password should be at least 8 characters'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 interface LoginPageProps {
   onAuthenticated: (user: User) => void;
@@ -22,12 +29,18 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+  });
+  const signupForm = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginForm : signupForm;
+
+  const onLoginSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     setError('');
     try {
@@ -41,6 +54,23 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
       setIsSubmitting(false);
     }
   };
+
+  const onSignupSubmit = async (values: SignupFormValues) => {
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const response = await authApi.register(values.full_name, values.email, values.password);
+      localStorage.setItem('pa_token', response.data.token);
+      localStorage.setItem('pa_user', JSON.stringify(response.data.user));
+      onAuthenticated(response.data.user);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onSubmit = mode === 'login' ? handleSubmit(onLoginSubmit) : handleSubmit(onSignupSubmit);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.09),_transparent_55%)] px-4 py-10">
@@ -81,11 +111,29 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
           <div className="px-8 py-10 sm:px-10 lg:px-12">
             <div className="mb-8">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-blue-600">Secure access</p>
-              <h2 className="mt-2 text-3xl font-semibold text-slate-900">Sign in to your workspace</h2>
+              <h2 className="mt-2 text-3xl font-semibold text-slate-900">
+                {mode === 'login' ? 'Sign in to your workspace' : 'Create your workspace account'}
+              </h2>
               <p className="mt-2 text-sm text-slate-500">Access contracts, alerts, and governance views.</p>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <form className="space-y-4" onSubmit={onSubmit}>
+              {mode === 'signup' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="full_name">Full name</label>
+                  <input
+                    id="full_name"
+                    type="text"
+                    autoComplete="name"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white"
+                    placeholder="Jane Auditor"
+                    {...signupForm.register('full_name')}
+                  />
+                  {signupForm.formState.errors.full_name && (
+                    <p className="mt-2 text-sm text-red-600">{signupForm.formState.errors.full_name.message}</p>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="email">Email</label>
                 <input
@@ -128,12 +176,23 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
                 disabled={isSubmitting}
                 className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isSubmitting ? 'Signing in…' : 'Sign in'}
+                {isSubmitting ? (mode === 'login' ? 'Signing in…' : 'Creating account…') : (mode === 'login' ? 'Sign in' : 'Sign up')}
               </button>
             </form>
 
+            <button
+              type="button"
+              className="mt-4 w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-700"
+              onClick={() => {
+                setMode((prev) => (prev === 'login' ? 'signup' : 'login'));
+                setError('');
+              }}
+            >
+              {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            </button>
+
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-              Demo credentials: <span className="font-semibold text-slate-900">jane@moh.go.ke</span> / <span className="font-semibold text-slate-900">supersecret1</span>
+              Demo credentials: <span className="font-semibold text-slate-900">jane.auditor@health.go.ke</span> / <span className="font-semibold text-slate-900">password123</span>
             </div>
           </div>
         </div>
