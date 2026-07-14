@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AlertsResponse, AuthResponse, BenchmarksResponse, ContractsResponse } from '../types';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
 });
 
 api.interceptors.request.use((config) => {
@@ -16,6 +16,8 @@ api.interceptors.request.use((config) => {
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }),
+  register: (full_name: string, email: string, password: string) =>
+    api.post<AuthResponse>('/auth/register', { full_name, email, password }),
 };
 
 export const dashboardApi = {
