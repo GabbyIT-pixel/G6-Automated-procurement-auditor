@@ -30,7 +30,7 @@ export default function AlertsPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-slate-900">{alert.risk_level}</p>
-                    <p className="mt-1 text-sm text-slate-500">Variance {alert.variance_pct.toFixed(1)}%</p>
+                    <p className="mt-1 text-sm text-slate-500">Variance {(typeof alert.variance_pct === 'number' ? alert.variance_pct : Number(alert.variance_pct ?? 0)).toFixed(1)}%</p>
                     <p className="mt-1 text-sm text-slate-500">{new Date(alert.flagged_at).toLocaleDateString()}</p>
                   </div>
                 </div>

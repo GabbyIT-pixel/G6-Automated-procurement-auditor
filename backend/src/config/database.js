@@ -13,6 +13,13 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
+const dbConfigSummary = {
+  host: process.env.DB_HOST || "localhost",
+  port: parseInt(process.env.DB_PORT) || 5432,
+  user: process.env.DB_USER || "postgres",
+  database: process.env.DB_NAME || "procurement_auditor",
+};
+
 pool.on("connect", () => {
   console.log("New client connected to PostgreSQL pool");
 });
@@ -23,11 +30,13 @@ pool.on("error", (err) => {
 
 async function testConnection() {
   try {
+    console.log("Attempting PostgreSQL connection:", dbConfigSummary);
     const client = await pool.connect();
     const result = await client.query("SELECT NOW() AS current_time");
     client.release();
     console.log("PostgreSQL connected — DB time:", result.rows[0].current_time);
   } catch (err) {
+    console.error("PostgreSQL target:", dbConfigSummary);
     console.error("PostgreSQL connection failed:", err.message);
     process.exit(1);
   }
