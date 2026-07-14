@@ -2,7 +2,7 @@
 // works regardless of the current working directory. dotenv does not override
 // variables that are already set, so this is safe alongside config/database.js.
 const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env"), override: true });
+require("dotenv").config({ path: path.resolve(__dirname, "../../.env"), override: true });
 
 const express = require("express");
 const cors = require("cors");
