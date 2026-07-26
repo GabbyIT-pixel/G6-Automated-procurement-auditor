@@ -1,171 +1,110 @@
 # G6 — Automated Public Health Procurement Auditor
 
-A proactive web-based platform that automatically audits government medical procurement contracts in Kenya. The system compares awarded contract prices against independent KEMSA market benchmarks to identify inflated procurement before public funds are lost.
+A web-based platform that automatically audits government medical procurement contracts in Kenya. Every submitted contract is compared against independent KEMSA market benchmark prices, scored for risk, and — where the variance is high enough — automatically flagged for investigation, so inflated procurement can be caught before public funds are lost.
 
 ---
 
 ## Overview
 
-The Automated Public Health Procurement Auditor is designed to improve transparency and accountability in public procurement by automatically evaluating submitted medical supply contracts against trusted market reference prices.
-
-Every submitted contract is analyzed in real time, assigned a risk level, and—where necessary—flagged for further investigation.
-
----
+Public procurement fraud is often only discovered long after payment, when the paper trail is cold. This project flips that: contracts are audited **at the point of submission**, in real time, against a trusted reference price list, and the system generates its own fraud alerts rather than waiting for a human to spot the anomaly.
 
 ## Features
 
--  Automatic procurement price auditing
--  KEMSA market price comparison
--  Real-time fraud risk detection
--  Procurement dashboard
--  JWT-based authentication
--  Contract management
--  Automated fraud alert generation
--  PostgreSQL-backed data storage
--  RESTful API built with Express
-
----
-
-## System Architecture
-
-The application follows a classic **three-tier architecture**.
-
-| Layer | Component | Technology |
-|--------|-----------|------------|
-| Presentation | Dashboard UI | React + Vite |
-| Application | REST API | Node.js + Express 5 |
-| Data | Database | PostgreSQL 16 |
-
----
+- Automatic procurement price auditing on contract submission
+- KEMSA market benchmark price comparison
+- Real-time risk scoring (Low / Medium / High / Critical)
+- Automated fraud alert generation for risky contracts
+- Procurement dashboard with contracts, alerts, and analytics views
+- JWT-based authentication
+- RESTful API built with Express 5
+- PostgreSQL-backed data storage
 
 ## Tech Stack
 
-### Frontend
-
-- React
-- Vite
-- JavaScript
-- CSS
-
-### Backend
-
-- Node.js
-- Express 5
-- JWT Authentication
-- PostgreSQL (`pg`)
-- Jest
-
-### Database
-
-- PostgreSQL 16
-
----
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS, React Router, TanStack Query, React Hook Form + Zod, Recharts, Framer Motion |
+| Backend | Node.js, Express 5, JWT (`jsonwebtoken`), `bcryptjs`, `express-rate-limit`, `helmet` |
+| Database | PostgreSQL 16 (`pg`) |
+| Testing | Jest, Supertest |
 
 ## Audit Engine
 
-Each procurement contract is evaluated using the following formula:
+The core of the system is a pure, dependency-free function (`backend/src/services/audit.service.js`) that computes how far an awarded unit price deviates from the KEMSA reference price:
 
-```text
-variance_pct =
-((awarded_unit_price - reference_price_kes)
- / reference_price_kes)
-× 100
+```
+variance_pct = ((awarded_unit_price - reference_price_kes) / reference_price_kes) × 100
 ```
 
-### Risk Classification
+### Risk classification
 
-| Price Variance | Risk Level | Alert Generated |
-|---------------|------------|-----------------|
-| Less than 15% | Low | ❌ No |
-| 15%–40% | Medium | ✅ Yes |
-| 40%–100% | High | ✅ Yes |
-| Above 100% | Critical | ✅ Yes |
+| Price variance | Risk level | Alert generated |
+|---|---|---|
+| < 15% | Low | No |
+| 15% – 40% | Medium | Yes |
+| 40% – 100% | High | Yes |
+| > 100% | Critical | Yes |
 
-Whenever a contract exceeds the acceptable variance threshold, an alert is automatically inserted into the `fraud_alerts` table within the same database transaction.
+Only overpricing escalates risk — prices at or below the benchmark are always Low. Whenever a contract lands at Medium risk or above, a fraud alert is generated automatically.
 
----
-
-# Project Structure
+## Project Structure
 
 ```
 .
 ├── backend/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   └── server.js
+│   ├── src/
+│   │   ├── config/          # Database connection config
+│   │   ├── controllers/     # auth, contract, benchmark, alert controllers
+│   │   ├── middleware/      # auth middleware, error handler
+│   │   ├── routes/          # auth, contract, benchmark, alert routes
+│   │   ├── services/        # audit.service.js — the audit engine
+│   │   ├── utils/           # asyncHandler, jwt, validators
+│   │   ├── app.js
+│   │   └── server.js
+│   ├── tests/
+│   └── .env.example
 │
 ├── database/
-│   ├── migrations/
-│   ├── seed/
-│   └── scripts/
+│   ├── migrations/          # SQL schema migrations
+│   └── seed/                # KEMSA benchmark, demo users, mock transactions
 │
 ├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── vite.config.js
+│   └── src/
+│       ├── components/      # ui, layout, contracts
+│       ├── pages/           # auth, dashboard, contracts, alerts, settings
+│       ├── lib/              # api client, utils
+│       └── types/
 │
+├── docs/                    # Architecture and ERD diagrams
+├── RUNNING.md                # Detailed step-by-step run guide
 └── README.md
 ```
 
----
+## Getting Started
 
-# Backend Setup
-
-## Prerequisites
+### Prerequisites
 
 - Node.js 18+
-- PostgreSQL 16
-- npm
+- npm 9+
+- PostgreSQL 16+ running locally
 
----
-
-## 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd g6-automated-procurement-auditor
+git clone https://github.com/GabbyIT-pixel/G6-Automated-procurement-auditor.git
+cd G6-Automated-procurement-auditor
 ```
 
----
-
-## 2. Create the Database
-
-Create a PostgreSQL database named:
-
-```text
-procurement_auditor
-```
-
-Run all migration scripts located in:
-
-```
-database/migrations/
-```
-
-This creates the following tables:
-
-- users
-- market_baselines
-- procurement_contracts
-- fraud_alerts
-
----
-
-## 3. Install Dependencies
+### 2. Install dependencies
 
 ```bash
-cd backend
-npm install
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
 ```
 
----
+### 3. Configure environment variables
 
-## 4. Configure Environment Variables
-
-Create a `.env` file inside the **backend** directory.
+Create `backend/.env` (see `backend/.env.example`):
 
 ```env
 DB_HOST=localhost
@@ -178,128 +117,100 @@ JWT_SECRET=your_secure_jwt_secret
 JWT_EXPIRES_IN=8h
 
 PORT=5000
-
 CORS_ORIGIN=http://localhost:5173
 ```
 
----
-
-## 5. Start the Development Server
+### 4. Create the database and run migrations
 
 ```bash
+createdb -h localhost -p 5432 -U postgres procurement_auditor
+
+psql -h localhost -p 5432 -U postgres -d procurement_auditor -f database/migrations/init_auth_and_market_baselines.sql
+psql -h localhost -p 5432 -U postgres -d procurement_auditor -f database/migrations/create_procurement_ledger_and_anomaly_alerts.sql
+```
+
+> Do **not** run `database/migrations/optimize_performance_indices_and_data_constraints.sql` yet — it still references a deprecated schema (see [Known Issues](#known-issues)).
+
+### 5. Seed demo data
+
+```bash
+cd backend
+npm run seed
+```
+
+This seeds the KEMSA benchmark prices, demo users, and mock procurement transactions.
+
+### 6. Run the app
+
+In two terminals:
+
+```bash
+# Terminal 1 — backend
+cd backend
+npm start        # or npm run dev for nodemon
+```
+
+```bash
+# Terminal 2 — frontend
+cd frontend
 npm run dev
 ```
 
----
+Then open `http://localhost:5173`.
+
+**Demo login:** `jane.auditor@health.go.ke` / `password123`
+
+For a more detailed walkthrough (including troubleshooting), see [`RUNNING.md`](./RUNNING.md).
 
 ## Useful Scripts
 
 ```bash
-npm run dev      # Start development server (nodemon)
+npm run dev      # Start backend with nodemon (backend/)
+npm start        # Start backend in production mode (backend/)
+npm test         # Run Jest test suite (backend/)
+npm run seed     # Seed the database with benchmark and demo data (backend/)
 
-npm test         # Run Jest tests
-
-npm run seed     # Seed database with KEMSA benchmark prices
+npm run dev      # Start Vite dev server (frontend/)
+npm run build    # Type-check and build for production (frontend/)
 ```
 
----
+## API Endpoints
 
-# API Endpoints
-
-| Method | Endpoint | Authentication | Description |
-|---------|----------|----------------|-------------|
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
 | GET | `/api/health` | Public | Health check |
-| POST | `/api/auth/register` | Public | Register user and return JWT |
-| POST | `/api/auth/login` | Public | Authenticate user and return JWT |
+| POST | `/api/auth/register` | Public | Register a user and return a JWT |
+| POST | `/api/auth/login` | Public | Authenticate and return a JWT |
 | GET | `/api/benchmarks` | Public | Retrieve KEMSA benchmark prices |
-| POST | `/api/contracts` | Bearer Token | Submit procurement contract and trigger audit |
-| GET | `/api/contracts` | Bearer Token | Retrieve procurement ledger |
-| GET | `/api/alerts` | Bearer Token | Retrieve flagged procurement alerts |
+| POST | `/api/contracts` | Bearer token | Submit a procurement contract and trigger an audit |
+| GET | `/api/contracts` | Bearer token | Retrieve the procurement ledger |
+| GET | `/api/alerts` | Bearer token | Retrieve flagged procurement alerts |
 
----
+## Database
 
-# Database
-
-The system currently uses four primary tables:
+Four primary tables back the system:
 
 - `users`
 - `market_baselines`
 - `procurement_contracts`
 - `fraud_alerts`
 
----
+## Known Issues
 
-# Active Development
+- **Deprecated optimization script.** `database/migrations/optimize_performance_indices_and_data_constraints.sql` still references an old schema (`item_name`, `county_name`, `contracted_price_kes`, `submitted_by`, `deviation_pct`, and the obsolete `anomaly_alerts` table). Do not run it until it's updated to match the current schema.
+- **Alert review workflow not yet implemented.** The `fraud_alerts` table has no `review_status` column yet; a migration adding `review_status CHECK (review_status IN ('New', 'Reviewed', 'Dismissed'))` is planned, which is a prerequisite for a future `PATCH /api/alerts/:id` endpoint.
 
-## Pending Feature
+## Roadmap
 
-### Alert Status Workflow
-
-The `fraud_alerts` table currently does not include a `review_status` column.
-
-A migration is planned to introduce:
-
-```sql
-review_status
-CHECK (
-    review_status IN (
-        'New',
-        'Reviewed',
-        'Dismissed'
-    )
-)
-```
-
-This migration is required before implementing:
-
-```
-PATCH /api/alerts/:id
-```
-
----
-
-## Known Issue
-
-### Deprecated Optimization Script
-
-The SQL script:
-
-```
-optimize_performance_indices_and_data_constraints.sql
-```
-
-still references deprecated columns including:
-
-- item_name
-- county_name
-- contracted_price_kes
-- submitted_by
-- deviation_pct
-
-and the obsolete table:
-
-```
-anomaly_alerts
-```
-
-Do **not** execute this script until it has been updated to match the current schema.
-
----
-
-# Future Improvements
-
-- Alert review workflow
-- Email notifications
-- Procurement analytics dashboard
-- Historical trend analysis
-- County procurement comparison
+- Alert review workflow (`New` / `Reviewed` / `Dismissed`)
+- Email notifications for high-risk alerts
+- Procurement analytics dashboard and historical trend analysis
+- County-level procurement comparison
 - CSV/PDF report exports
-- Machine-learning anomaly detection
+- Machine-learning-based anomaly detection
 - Role-based permissions
 
----
-
-# Team G6
+## Team G6
 
 - Gabriel Mugisha
 - Philip Mbogho
@@ -308,8 +219,6 @@ Do **not** execute this script until it has been updated to match the current sc
 - Clive Mushipe
 - James Kanneh
 
----
-
 ## License
 
-This project was developed by **Team G6** for academic purposes.
+Developed by Team G6 for academic purposes.
