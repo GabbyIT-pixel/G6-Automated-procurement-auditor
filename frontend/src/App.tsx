@@ -1,6 +1,7 @@
 import { Suspense, lazy, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/auth/LoginPage';
+import LandingPage from './pages/LandingPage/LandingPage'; // <-- Your new import
 import AppShell from './components/layout/AppShell';
 import { Skeleton } from './components/ui';
 import type { User } from './types';
@@ -32,7 +33,13 @@ function App() {
   const [user, setUser] = useState<User | null>(getStoredUser);
 
   if (!user) {
-    return <LoginPage onAuthenticated={setUser} />;
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage onAuthenticated={setUser} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -59,4 +66,3 @@ function App() {
 }
 
 export default App;
-
