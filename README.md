@@ -219,6 +219,10 @@ Four primary tables back the system:
 - Clive Mushipe
 - James Kanneh
 
+  ## Demo video: https://drive.google.com/file/d/1VPkK5PWfVW08wXrFxZyuKUhy5bdCQpAe/view
+  ## Deployment: https://aphpa.netlify.app/ 
+  
+
 ## License
 
 Developed by Team G6 for academic purposes.
